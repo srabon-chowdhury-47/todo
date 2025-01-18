@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <link rel="icon" href="./favicon-32x32.png" type="image/x-icon">
+
+    <style>
+        /* General styling */
+        html, body {
+            height: 100%; /* Ensure full height */
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        /* Flexbox layout for the page */
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            flex: 1; /* Main container takes remaining space */
+            max-width: 600px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin: 20px auto; /* Center horizontally and add spacing */
+        }
+
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .task-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .task-completed {
+            text-decoration: line-through;
+            color: #6c757d;
+            background-color: #e8f5e9;
+            border-left: 5px solid #28a745;
+        }
+
+        .task-actions button {
+            margin-left: 5px;
+            border-radius: 50%;
+            font-size: 1rem;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .task-actions button:hover {
+            transform: scale(1.15);
+        }
+
+        .task-actions .completed {
+            background-color: #28a745;
+            color: #fff;
+            opacity: 0.8;
+        }
+
+        .task-actions .completed:hover {
+            opacity: 1;
+        }
+
+        .task-actions .delete {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .task-text {
+            flex: 1;
+            margin: 0 10px;
+            word-break: break-word;
+        }
+
+        .add-task-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .add-task-bar input {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .add-task-bar button {
+            min-width: 100px;
+        }
+
+        footer {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #343a40;
+            color: #ffffff;
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        .status-info span {
+            font-weight: bold;
+        }
+
+        #totalTasks {
+            color: #007bff; /* Blue for total tasks */
+        }
+
+        #completedTasks {
+            color: #28a745; /* Green for completed tasks */
+        }
+
+        #pendingTasks {
+            color: #dc3545; /* Red for pending tasks */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="text-center mb-4">
+            <h2>✨ To-Do List ✨</h2>
+            <p id="currentDateTime"></p>
+        </div>
+
+        <div class="mb-3 text-center">
+            <input type="date" id="todoDate" class="form-control d-inline-block" style="max-width: 300px;">
+        </div>
+
+        <div class="add-task-bar mb-3">
+            <input type="text" id="todoInput" class="form-control" placeholder="📝 Add a new task">
+            <button class="btn btn-primary" id="addTaskBtn">➕ Add</button>
+        </div>
+
+        <ul class="list-group" id="todoList"></ul>
+
+        <div class="mt-4 text-center status-info">
+            <p>Total Tasks: <span id="totalTasks">0</span></p>
+            <p>Completed: <span id="completedTasks">0</span></p>
+            <p>Pending: <span id="pendingTasks">0</span></p>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2025 ToDo App. All Rights Reserved. Made with ❤️ by <a href="https://www.facebook.com/chowdhury.shaheb.143"> Md. Srabon Chowdhury</a>
+    </footer>
+
+    <script>
+        const todoList = document.getElementById('todoList');
+        const todoInput = document.getElementById('todoInput');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const totalTasks = document.getElementById('totalTasks');
+        const completedTasks = document.getElementById('completedTasks');
+        const pendingTasks = document.getElementById('pendingTasks');
+        const todoDate = document.getElementById('todoDate');
+        const currentDateTime = document.getElementById('currentDateTime');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            displayCurrentDateTime();
+            loadTasks();
+        });
+
+        addTaskBtn.addEventListener('click', addTask);
+        todoDate.valueAsDate = new Date();
+
+        todoInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                addTask();
+            }
+        });
+
+        function displayCurrentDateTime() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+
+            function updateTime() {
+                const now = new Date();
+                currentDateTime.textContent = now.toLocaleDateString('en-US', options);
+            }
+
+            updateTime();
+            setInterval(updateTime, 1000);
+        }
+
+        function loadTasks() {
+            const date = todoDate.value;
+            const tasks = JSON.parse(localStorage.getItem(date)) || [];
+            displayTasks(tasks);
+        }
+
+        function addTask() {
+            const date = todoDate.value;
+            const taskText = todoInput.value.trim();
+            if (taskText === '') return;
+            const tasks = JSON.parse(localStorage.getItem(date)) || [];
+            tasks.push({ text: taskText, completed: false });
+            localStorage.setItem(date, JSON.stringify(tasks));
+            todoInput.value = '';
+            displayTasks(tasks);
+        }
+
+        function displayTasks(tasks) {
+            todoList.innerHTML = '';
+            let total = 0, completed = 0;
+            tasks.forEach((task, index) => {
+                const taskItem = document.createElement('li');
+                taskItem.className = `list-group-item d-flex align-items-center task-item ${task.completed ? 'task-completed' : ''}`;
+                taskItem.innerHTML = `
+                    <span class="task-text">${task.text}</span>
+                    <div class="task-actions">
+                        <button class="btn btn-sm completed" onclick="toggleTask(${index})"><i class="fas fa-check"></i></button>
+                        <button class="btn btn-sm delete" onclick="deleteTask(${index})"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+                todoList.appendChild(taskItem);
+                total++;
+                if (task.completed) completed++;
+            });
+            totalTasks.innerText = total;
+            completedTasks.innerText = completed;
+            pendingTasks.innerText = total - completed;
+        }
+
+        function toggleTask(index) {
+            const date = todoDate.value;
+            const tasks = JSON.parse(localStorage.getItem(date));
+            tasks[index].completed = !tasks[index].completed;
+            localStorage.setItem(date, JSON.stringify(tasks));
+            displayTasks(tasks);
+        }
+
+        function deleteTask(index) {
+            const date = todoDate.value;
+            const tasks = JSON.parse(localStorage.getItem(date));
+            tasks.splice(index, 1);
+            localStorage.setItem(date, JSON.stringify(tasks));
+            displayTasks(tasks);
+        }
+
+        todoDate.addEventListener('change', loadTasks);
+    </script>
+</body>
+</html>
